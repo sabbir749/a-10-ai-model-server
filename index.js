@@ -13,7 +13,10 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
-const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.fc5kt4o.mongodb.net/?appName=Cluster0`;
+
+// const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.fc5kt4o.mongodb.net/?appName=Cluster0`;
+
+const uri = "mongodb+srv://model-DB:XmYRmeGxOPKu598d@cluster0.r0jfqoe.mongodb.net/?appName=Cluster0";
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -132,7 +135,7 @@ async function run() {
     app.get("/latest-models", async (req, res) => {
       const result = await modelCollection
         .find()
-        .sort({ created_at: "desc" })
+        .sort({ createdAt: "desc" })
         .limit(6)
         .toArray();
 
@@ -144,7 +147,7 @@ async function run() {
     app.get("/my-models", verifyToken, async (req, res) => {
       const email = req.query.email;
       const result = await modelCollection
-        .find({ created_by: email })
+        .find({ createdBy: email })
         .toArray();
       res.send(result);
     });
@@ -159,17 +162,17 @@ async function run() {
       const filter = { _id: new ObjectId(id) };
       const update = {
         $inc: {
-          downloads: 1,
+          purchased: 1,
         },
       };
       const downloadCounted = await modelCollection.updateOne(filter, update);
       res.send({ result, downloadCounted });
     });
 
-    app.get("/my-downloads", verifyToken, async (req, res) => {
+    app.get("/my-purchase", verifyToken, async (req, res) => {
       const email = req.query.email;
       const result = await downloadCollection
-        .find({ downloaded_by: email })
+        .find({ purchasedBy: email })
         .toArray();
       res.send(result);
     });

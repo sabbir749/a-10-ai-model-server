@@ -13,10 +13,10 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
-
 // const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.fc5kt4o.mongodb.net/?appName=Cluster0`;
 
-const uri = "mongodb+srv://model-DB:XmYRmeGxOPKu598d@cluster0.r0jfqoe.mongodb.net/?appName=Cluster0";
+const uri =
+  "mongodb+srv://model-DB:XmYRmeGxOPKu598d@cluster0.r0jfqoe.mongodb.net/?appName=Cluster0";
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -65,9 +65,11 @@ async function run() {
 
     app.get("/models/:id", verifyToken, async (req, res) => {
       const { id } = req.params;
-      const objectId = new ObjectId(id);
+      // const objectId = new ObjectId(id);
+      // console.log(objectId);
 
-      const result = await modelCollection.findOne({ _id: objectId });
+      const result = await modelCollection.findOne({ _id: new ObjectId(id) });
+      console.log(result);
 
       res.send({
         success: true,
@@ -93,39 +95,43 @@ async function run() {
     //updateOne
     //updateMany
 
-app.put("/models/:id", verifyToken, async (req, res) => {
-  const { id } = req.params;
-  const data = req.body;
+    app.put("/models/:id", verifyToken, async (req, res) => {
+      const { id } = req.params;
+      const data = req.body;
 
-  try {
-    const objectId = new ObjectId(id);
+      try {
+        const objectId = new ObjectId(id);
 
-    // Get decoded token to know who is logged in
-    const token = req.headers.authorization.split(" ")[1];
-    const decodedToken = await admin.auth().verifyIdToken(token);
-    const userEmail = decodedToken.email;
+        // Get decoded token to know who is logged in
+        const token = req.headers.authorization.split(" ")[1];
+        const decodedToken = await admin.auth().verifyIdToken(token);
+        const userEmail = decodedToken.email;
 
-    // Find the model
-    const model = await modelCollection.findOne({ _id: objectId });
-    if (!model) {
-      return res.status(404).send({ message: "Model not found" });
-    }
+        // Find the model
+        const model = await modelCollection.findOne({ _id: objectId });
+        if (!model) {
+          return res.status(404).send({ message: "Model not found" });
+        }
 
-    // Only creator can update
-    if (model.createdBy !== userEmail) {
-      return res.status(403).send({ message: "You are not authorized to update this model" });
-    }
+        // Only creator can update
+        if (model.createdBy !== userEmail) {
+          return res
+            .status(403)
+            .send({ message: "You are not authorized to update this model" });
+        }
 
-    const update = { $set: data };
-    const result = await modelCollection.updateOne({ _id: objectId }, update);
+        const update = { $set: data };
+        const result = await modelCollection.updateOne(
+          { _id: objectId },
+          update
+        );
 
-    res.send({ success: true, result });
-  } catch (error) {
-    console.error(error);
-    res.status(500).send({ message: "Server error" });
-  }
-});
-
+        res.send({ success: true, result });
+      } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: "Server error" });
+      }
+    });
 
     // delete
     // deleteOne
@@ -161,9 +167,7 @@ app.put("/models/:id", verifyToken, async (req, res) => {
 
     app.get("/my-models", verifyToken, async (req, res) => {
       const email = req.query.email;
-      const result = await modelCollection
-        .find({ createdBy: email })
-        .toArray();
+      const result = await modelCollection.find({ createdBy: email }).toArray();
       res.send(result);
     });
 
@@ -184,13 +188,36 @@ app.put("/models/:id", verifyToken, async (req, res) => {
       res.send({ result, downloadCounted });
     });
 
-    app.get("/my-purchase", verifyToken, async (req, res) => {
-      const email = req.query.email;
-      const result = await downloadCollection
-        .find({ purchasedBy: email })
-        .toArray();
-      res.send(result);
+app.get("/my-downloads", verifyToken, async (req, res) => {
+  const email = req.query.email;
+
+  if (!email) {
+    return res.status(400).send({
+      success: false,
+      message: "Email query parameter is required",
+      result: [],
     });
+  }
+
+  try {
+    const result = await downloadCollection
+      .find({ purchasedBy: email })
+      .toArray();
+
+    res.send({
+      success: true,
+      result: result || [], // always return array
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({
+      success: false,
+      message: "Server error",
+      result: [],
+    });
+  }
+});
+
 
     app.get("/search", async (req, res) => {
       const search_text = req.query.search;

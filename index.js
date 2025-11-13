@@ -63,19 +63,19 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/models/:id", verifyToken, async (req, res) => {
-      const { id } = req.params;
-      // const objectId = new ObjectId(id);
-      // console.log(objectId);
+    // app.get("/models/:id", verifyToken, async (req, res) => {
+    //   const { id } = req.params;
+    //   // const objectId = new ObjectId(id);
+    //   // console.log(objectId);
 
-      const result = await modelCollection.findOne({ _id: new ObjectId(id) });
-      console.log(result);
+    //   const result = await modelCollection.findOne({ _id: new ObjectId(id) });
+    //   console.log(result);
 
-      res.send({
-        success: true,
-        result,
-      });
-    });
+    //   res.send({
+    //     success: true,
+    //     result,
+    //   });
+    // });
 
     // post method
     //  insertOne

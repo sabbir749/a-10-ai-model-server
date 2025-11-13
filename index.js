@@ -93,24 +93,39 @@ async function run() {
     //updateOne
     //updateMany
 
-    app.put("/models/:id", async (req, res) => {
-      const { id } = req.params;
-      const data = req.body;
-      // console.log(id)
-      // console.log(data)
-      const objectId = new ObjectId(id);
-      const filter = { _id: objectId };
-      const update = {
-        $set: data,
-      };
+app.put("/models/:id", verifyToken, async (req, res) => {
+  const { id } = req.params;
+  const data = req.body;
 
-      const result = await modelCollection.updateOne(filter, update);
+  try {
+    const objectId = new ObjectId(id);
 
-      res.send({
-        success: true,
-        result,
-      });
-    });
+    // Get decoded token to know who is logged in
+    const token = req.headers.authorization.split(" ")[1];
+    const decodedToken = await admin.auth().verifyIdToken(token);
+    const userEmail = decodedToken.email;
+
+    // Find the model
+    const model = await modelCollection.findOne({ _id: objectId });
+    if (!model) {
+      return res.status(404).send({ message: "Model not found" });
+    }
+
+    // Only creator can update
+    if (model.createdBy !== userEmail) {
+      return res.status(403).send({ message: "You are not authorized to update this model" });
+    }
+
+    const update = { $set: data };
+    const result = await modelCollection.updateOne({ _id: objectId }, update);
+
+    res.send({ success: true, result });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ message: "Server error" });
+  }
+});
+
 
     // delete
     // deleteOne

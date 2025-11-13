@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const admin = require("firebase-admin");
-require("dotenv").config()
+require("dotenv").config();
 require("dotenv").config();
 const serviceAccount = require("./serviceKey.json");
 const app = express();
@@ -14,9 +14,7 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
-
-const uri =
-  `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.r0jfqoe.mongodb.net/?appName=Cluster0`;
+const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.r0jfqoe.mongodb.net/?appName=Cluster0`;
 
 const client = new MongoClient(uri, {
   serverApi: {
@@ -188,36 +186,35 @@ async function run() {
       res.send({ result, downloadCounted });
     });
 
-app.get("/my-downloads", verifyToken, async (req, res) => {
-  const email = req.query.email;
+    app.get("/my-downloads", verifyToken, async (req, res) => {
+      const email = req.query.email;
 
-  if (!email) {
-    return res.status(400).send({
-      success: false,
-      message: "Email query parameter is required",
-      result: [],
+      if (!email) {
+        return res.status(400).send({
+          success: false,
+          message: "Email query parameter is required",
+          result: [],
+        });
+      }
+
+      try {
+        const result = await downloadCollection
+          .find({ purchasedBy: email })
+          .toArray();
+
+        res.send({
+          success: true,
+          result: result || [], // always return array
+        });
+      } catch (error) {
+        console.error(error);
+        res.status(500).send({
+          success: false,
+          message: "Server error",
+          result: [],
+        });
+      }
     });
-  }
-
-  try {
-    const result = await downloadCollection
-      .find({ purchasedBy: email })
-      .toArray();
-
-    res.send({
-      success: true,
-      result: result || [], // always return array
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).send({
-      success: false,
-      message: "Server error",
-      result: [],
-    });
-  }
-});
-
 
     app.get("/search", async (req, res) => {
       const search_text = req.query.search;
